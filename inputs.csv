@@ -1,0 +1,20 @@
+Variable name,Input,USER INPUT
+Modeler name,MODELER NAME,USER DEFINED
+Model directory,M:\user\dahal\CSI_documentation\Mainfiles\Version3,USER DEFINED
+SQLite file,GA100.sqlite,USER DEFINED
+Res1D file,GABaseResultsGA.res1d,USER DEFINED
+Scenario name,EGATE69A,USER DEFINED
+Catchment name,CHR001,OPTIONAL
+Basin name,M_EGATE69A,USER DEFINED
+Event and parameter list,M:\user\dahal\CSI_documentation\Mainfiles\Version3\event_n_parameter_list.csv,USER DEFINED
+Flow data directory,M:\user\dahal\CSI_documentation\Mainfiles\Version3\EGATE69A_processed.csv,USER DEFINED
+Flow data - DateTime colomn number,1,USER DEFINED
+Flow data - Diurnal colomn number,3,USER DEFINED
+Flow data - I&I colomn number,4,USER DEFINED
+Rain data directory,M:\user\dahal\CSI_documentation\Mainfiles\Version3\M_EGATE69A.csv,USER DEFINED
+Rain data - DateTime colomn number,2,USER DEFINED
+Rain data - Value colomn number,3,USER DEFINED
+Main excel directory,M:\user\dahal\CSI_documentation\Master_excel_file_draft\CSI_Calibration_Summary2024.xlsx,USER DEFINED
+Rain hyetograph width,2,OPTIONAL
+Save interpolated graph,TRUE,OPTIONAL
+Update main excel,TRUE,OPTIONAL
