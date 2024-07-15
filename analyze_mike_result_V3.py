@@ -215,6 +215,99 @@ def compute_metrics(flow_data_filt, qdf_filt, save_int):
     return [ldf3, Nash, RMSE, Relq, Relvol]
 
 
+##############################################################################################
+######## Create plots ##############################
+def create_graph(model_date, model_y, flow_met_date, flow_met_y, diurn_date, diurn_y, rain_date, rain_y,
+                 day_ints,max_mgd, Nash, RMSE, Relq, Relvol, max_rain,width_fact,rain_width,
+                 scenario_name,event_name,model_dir):
+    """
+    This function will generate comparision graphs between model and flow meter and insert various performance metrices
+
+    Parameters
+    ----------
+    model_date : df 
+        x axis date of model result
+    model_y : df
+        y - axis flow of model result
+    flow_met_date : df
+        x axis date of flow meter data
+    flow_met_y : df
+        y axis flow of flow meter data
+    diurn_date : df
+        x axis date of diurnal data
+    diurn_y : df
+        y axis flow of diurnal data
+    rain_date : df
+        x axis date of rain data
+    rain_y : df
+        y axis values of rain data
+    day_ints : int 
+        value for x-axis label intervals
+    max_mgd : int
+        ylimit max for flow
+    Nash : int
+        Nash sutcliffe efficiency
+    RMSE : int
+        rootmeansquare error
+    Relq : int
+        Relative q peak.
+    Relvol: int
+        Relative volume
+    max_rain : int
+        ylimit max for rain
+    width_fact: int
+        this is the factor used for adjusting the bar graph width properly
+    rain_width : int
+        bar width for hyetograph
+    scenario_name: str
+        Name of the scenario 
+    event_name : str
+        string of event name
+    model_dir : str
+        model directory which is used for saving the plots
+    basin_name: str
+        This is the name of the basin.
+
+    Returns
+    -------
+    Comparison plots are prepared and saved in the model directory with proper name.
+
+    """
+    fig, ax = plt.subplots(figsize = (14, 8))
+    ax2 = ax.twinx()
+    #ax.plot(qdf_filt["Time"], qdf_filt["Data"], label = real_name, color = "red")
+    ax.plot(model_date, model_y, label = scenario_name, color = "red")
+    ax.plot(flow_met_date, flow_met_y, label = (scenario_name+"_mtr"), color = "darkblue")
+    ax.plot(diurn_date, diurn_y, label = "Diurnal", color = "chartreuse")
+    ax.xaxis.set_major_locator(mdates.DayLocator(interval = day_ints))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d/%Y"))
+    ax.set_ylabel("Flow (mgd)", fontsize = 12)
+    ax.set_ylim(0, max_mgd)
+    #### Adding text ####
+    #ax.text(1.06, 1.0,event_name,transform=ax.transAxes, size = 14)
+    text = "NASH: "+str(Nash)+"\n"+"RMSE: "+str(RMSE)+"\n"+"Rel Qpk: "+str(Relq)+"\n"+"Rel 2d Vol: "+str(Relvol)
+    ax.text(1.1, 0.325,"Goodness of Fit Metrics",transform=ax.transAxes, fontweight = "semibold", size = 12)
+    ax.text(1.1, 0.2,text,transform=ax.transAxes, size = 14)
+    
+    
+    #### Plotting hyetograph
+    #ax2.plot(rain_data_filt['datetime'], rain_data_filt['rain'], color = "lightblue", label = "Precip")
+    ax2.bar(rain_date, rain_y, edgecolor = "skyblue", label = "Precip", width = width_fact, fill = False)
+    ax2.set_ylim(0,max_rain)
+    ax2.invert_yaxis()
+    ax2.set_ylabel(str(rain_width)+"-hr rainfall (in)", fontsize = 12)
+    #ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+    # ask matplotlib for the plotted objects and their labels
+    lines, labels = ax.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax2.legend(lines + lines2, labels + labels2,bbox_to_anchor=(1.06, 0.9), loc="upper left", fontsize = 12, title = event_name,title_fontproperties = {'weight':"bold", "size":14})
+    fig.tight_layout()
+    rect = plt.Rectangle((0.005,0.005),0.99,0.99, transform = fig.transFigure, linewidth = 1, edgecolor = "black", facecolor = "none")
+    fig.patches.append(rect)
+    #fig.subplots_adjust(right=0.2)
+    plt.savefig(model_dir+"\\"+event_name+"_" + basin_name + ".png")
+    
+
 ###################################################################################
 ###############################################################################################
 ### Update value based on header name, basin row, and the value itself using openpyxl
@@ -292,6 +385,9 @@ qdf = res1d_catchment2.read(q1).reset_index()
 qdf.columns = ["Time", "Data"]
 ### converting to mgd
 qdf['Data'] = qdf['Data'] * 22.824465227271
+
+### ADF ############
+qdf_adf = qdf.groupby(pd.Grouper(key = "Time", freq = "1D" )).mean().reset_index()
 #######################################################
 
 ### Rain gauge directory ########################################################################
@@ -345,6 +441,9 @@ flow_data_2['I/I mgd'] = flow_data_2['I/I mgd'].astype(float)
 #### Remove empty rows from the data
 #flow_data_3 = flow_data[flow_data['Diurnal mgd'] != ' '].copy()
 flow_data_2['Diurnal mgd'] = flow_data_2['Diurnal mgd'].astype(float)
+
+#### ADF #######
+flow_data_adf = flow_data_2.groupby(pd.Grouper(key = "Date&Time PST/PDT", freq = "1D" )).mean().reset_index()
 
 #########################################################################################################
 
@@ -434,40 +533,15 @@ for i in range(0, len(event_data)):
     
     print("Creating graphs!")
     
-    #### Plot the graph 
-    fig, ax = plt.subplots(figsize = (14, 8))
-    ax2 = ax.twinx()
-    #ax.plot(qdf_filt["Time"], qdf_filt["Data"], label = real_name, color = "red")
-    ax.plot(ldf3["Date&Time PST/PDT"], ldf3["Modeled"], label = scenario_name, color = "red")
-    ax.plot(flow_data_filt['Date&Time PST/PDT'], flow_data_filt["I/I mgd"], label = (scenario_name+"_mtr"), color = "darkblue")
-    ax.plot(flow_data_filt['Date&Time PST/PDT'], flow_data_filt["Diurnal mgd"], label = "Diurnal", color = "chartreuse")
-    ax.xaxis.set_major_locator(mdates.DayLocator(interval = day_ints))
-    ax.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d/%Y"))
-    ax.set_ylabel("Flow (mgd)", fontsize = 12)
-    ax.set_ylim(0, max_mgd)
-    #### Adding text ####
-    #ax.text(1.06, 1.0,event_name,transform=ax.transAxes, size = 14)
-    text = "NASH: "+str(Nash)+"\n"+"RMSE: "+str(RMSE)+"\n"+"Rel Qpk: "+str(Relq)+"\n"+"Rel 2d Vol: "+str(Relvol)
-    ax.text(1.1, 0.325,"Goodness of Fit Metrics",transform=ax.transAxes, fontweight = "semibold", size = 12)
-    ax.text(1.1, 0.2,text,transform=ax.transAxes, size = 14)
+    #### Plot the graph for each events ###
     
+    create_graph(ldf3["Date&Time PST/PDT"],ldf3["Modeled"],flow_data_filt['Date&Time PST/PDT'],flow_data_filt["I/I mgd"],flow_data_filt['Date&Time PST/PDT'], flow_data_filt["Diurnal mgd"],
+                 rain_data_filt['datetime'],rain_data_filt['rain'],
+                 day_ints,max_mgd, Nash, RMSE, Relq, Relvol, max_rain,width_fact,rain_width,
+                 scenario_name,event_name,model_dir)
     
-    #### Plotting hyetograph
-    #ax2.plot(rain_data_filt['datetime'], rain_data_filt['rain'], color = "lightblue", label = "Precip")
-    ax2.bar(rain_data_filt['datetime'], rain_data_filt['rain'], edgecolor = "skyblue", label = "Precip", width = width_fact, fill = False)
-    ax2.set_ylim(0,max_rain)
-    ax2.invert_yaxis()
-    ax2.set_ylabel(str(rain_width)+"-hr rainfall (in)", fontsize = 12)
-    #ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
-    # ask matplotlib for the plotted objects and their labels
-    lines, labels = ax.get_legend_handles_labels()
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax2.legend(lines + lines2, labels + labels2,bbox_to_anchor=(1.06, 0.9), loc="upper left", fontsize = 12, title = event_name,title_fontproperties = {'weight':"bold", "size":14})
-    fig.tight_layout()
-    rect = plt.Rectangle((0.005,0.005),0.99,0.99, transform = fig.transFigure, linewidth = 1, edgecolor = "black", facecolor = "none")
-    fig.patches.append(rect)
-    #fig.subplots_adjust(right=0.2)
-    plt.savefig(model_dir+"\\"+event_name+"_" + basin_name + ".png")
+    ##################################################
+
     
     print("{0} completed! \n".format(event_name))
     
