@@ -31,7 +31,7 @@ Created on Tue Jun 25 00:09:58 2024
 
 # rain_width : This is the width of hyetograph. The unit is hour.
 
-
+### This version will also be able to compute the Average Daily Flow and make average daily flow graph
     
 
 #######################
