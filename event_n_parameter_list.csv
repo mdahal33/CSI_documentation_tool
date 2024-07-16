@@ -1,15 +1,15 @@
-Start Date,End Date,Event,Calibrated Parameters
-12/18/2019,12/25/2019,Event01,aflow
-1/21/2020,2/16/2020,Event02,rdii_area
-10/15/2020,10/29/2020,Event03,a_iarea
-1/1/2021,1/7/2021,Event04,a_ctime
-1/11/2021,1/22/2021,Event05,umax
-8/1/2021,9/1/2021,Event06,lmax
-10/26/2021,11/3/2021,Event07,cqof
-11/10/2021,11/18/2021,Event08,ck
-1/4/2022,1/26/2022,Event09,ckif
-2/26/2022,3/7/2022,Event10,ckbf
-,,,gw_carea
-,,,tof
-,,,tif
-,,,tg
+Start Date,End Date,Event,ADF_start,ADF_end,ADF_event,Calibrated Parameters
+12/18/2019,12/25/2019,Event01,10/1/2019,9/30/2020,ADF Event01,aflow
+1/21/2020,2/16/2020,Event02,10/1/2020,9/30/2021,ADF Event02,rdii_area
+10/15/2020,10/29/2020,Event03,10/1/2021,6/30/2022,ADF Event03,a_iarea
+1/1/2021,1/7/2021,Event04,,,,a_ctime
+1/11/2021,1/22/2021,Event05,,,,umax
+8/1/2021,9/1/2021,Event06,,,,lmax
+10/26/2021,11/3/2021,Event07,,,,cqof
+11/10/2021,11/18/2021,Event08,,,,ck
+1/4/2022,1/26/2022,Event09,,,,ckif
+2/26/2022,3/7/2022,Event10,,,,ckbf
+,,,,,,gw_carea
+,,,,,,tof
+,,,,,,tif
+,,,,,,tg
