@@ -361,6 +361,9 @@ event_data = evtnparams_data[['Start Date','End Date','Event']]
 event_data = event_data[event_data['Event'].notna()]
 event_data = event_data[event_data['Event']!=' ']
 
+adf_event_data = evtnparams_data[['ADF_start', 'ADF_end', 'ADF_event']]
+adf_event_data = adf_event_data[adf_event_data['ADF_event'].notna()]
+adf_event_data = adf_event_data[adf_event_data['ADF_event']!=' ']
 ### Model directory ####################################
 
 ### This is where the sqlite and res1d file is stored
@@ -410,7 +413,7 @@ rain_width = float(input_data['Input'].loc[16]) #hr
 rain_data_agg = rain_data.groupby(pd.Grouper(key = "datetime",freq = (str(rain_width)+"h")))['rain'].sum().reset_index()
 
 ### Daily aggregate
-rain_data_daily = rain_data.groupby(pd.Grouper(key = "datetime",freq = (str(24)+"h")))['rain'].sum()
+rain_data_daily = rain_data.groupby(pd.Grouper(key = "datetime",freq = (str(24)+"h")))['rain'].sum().reset_index()
 
 #################################################################################################################################
 
@@ -457,6 +460,8 @@ main_excel_dir = input_data['Input'].loc[15]
 metrics_list = list()
 ################################################################################
 
+### Loop for each short events ####################
+
 for i in range(0, len(event_data)):
     #### event information #####
     e1 = event_data.loc[i]
@@ -468,8 +473,8 @@ for i in range(0, len(event_data)):
     end_date = e1['End Date']
     start_dt = datetime.strptime(start_date, "%m/%d/%Y")
     end_dt = datetime.strptime(end_date, "%m/%d/%Y")
-    int = end_dt - start_dt
-    int_sec = int.total_seconds()
+    interv = end_dt - start_dt
+    int_sec = interv.total_seconds()
     int_day = int_sec/(3600*24)
     ######################
     
@@ -548,11 +553,109 @@ for i in range(0, len(event_data)):
     list_res = [event_name,Nash,RMSE, Relq, Relvol]
     metrics_list.append(list_res)
     
-    
-########################################################################################
 
+
+##### Loop for ADF events #############################################
+#######################################################################
+
+for i in range(0, len(adf_event_data)):
+    #### event information #####
+    e1 = adf_event_data.loc[i]
+    event_name = e1['ADF_event']
+    
+    print("\n Working on {0}".format(event_name))
+    
+    start_date = e1['ADF_start']
+    end_date = e1['ADF_end']
+    start_dt = datetime.strptime(start_date, "%m/%d/%Y")
+    end_dt = datetime.strptime(end_date, "%m/%d/%Y")
+    interv = end_dt - start_dt
+    int_sec = interv.total_seconds()
+    int_day = int_sec/(3600*24)
+    ######################
+    
+    
+    ### Filter model 
+    m1 = (qdf_adf["Time"]>=start_date)&(qdf_adf["Time"]<=end_date)
+    qdf_adf_filt = qdf_adf[m1].reset_index(drop = True)
+    
+    ### Filter rain
+    m2 = (rain_data_daily["datetime"]>=start_date)&(rain_data_daily["datetime"]<=end_date)
+    rain_adf_filt = rain_data_daily[m2].reset_index(drop = True)
+    
+    ### Filter flow meter data
+    m3 = (flow_data_adf['Date&Time PST/PDT']>=start_date)&(flow_data_adf['Date&Time PST/PDT']<=end_date)
+    flow_adf_filt = flow_data_adf[m3].reset_index(drop = True)
+    
+    #### X-axis Intervals for plots
+    if int_day <= 30:
+        day_ints = 5
+    elif (int_day > 30) & (int_day <=  60):
+        day_ints = 10
+    elif (int_day > 60) & (int_day <= 80):
+        day_ints = 30
+    elif (int_day > 80) & (int_day <= 100):
+        day_ints = 40
+    else:
+        day_ints = 60
+    ####################
+    
+    ### factor for bar width
+    ### 0.3 bar width worked best for 8 hour graph
+    rain_width_2 = 24 #hr. assuming 24 hr bin width
+    fact = rain_width_2/8 ## basically using unitary method for different rain_width value. 24 being for 24 hr
+    width_fact = 0.3*fact
+    
+    ### Ylimits for flow
+    
+    max_mgd = pd.DataFrame([qdf_adf_filt['Data'].max(), flow_adf_filt["I/I mgd"].max()]).max()[0]
+    max_mgd = math.ceil(max_mgd + 1)  
+    
+    
+    ### Rain 
+    max_rain = rain_adf_filt['rain'].max()
+    max_rain = math.ceil(max_rain * 3)
+    
+    ### Extract the NASH#, Qpeak, Volume
+    ############################### Calculating Metrices #################
+
+    met_list2 = compute_metrics(flow_adf_filt, qdf_adf_filt, save_interpolated_graph)
+    
+    ldf3 = met_list2[0].reset_index()
+    Nash = met_list2[1]
+    RMSE = met_list2[2]
+    Relq = met_list2[3]
+    Relvol = met_list2[4]
+
+    ##################################################################################
+
+    
+    ###############################Plot the graph ###################################
+    
+    print("Creating graphs!")
+    
+    #### Plot the graph for each events ###
+    
+    create_graph(ldf3["Date&Time PST/PDT"],ldf3["Modeled"],flow_adf_filt['Date&Time PST/PDT'],flow_adf_filt["I/I mgd"],flow_adf_filt['Date&Time PST/PDT'], flow_adf_filt["Diurnal mgd"],
+                 rain_adf_filt['datetime'],rain_adf_filt['rain'],
+                 60,max_mgd, Nash, RMSE, Relq, Relvol, max_rain,width_fact,rain_width_2,
+                 scenario_name,event_name,model_dir)
+    
+    ##################################################
+
+    
+    print("{0} completed! \n".format(event_name))
+    
+    list_res = [event_name,Nash,RMSE, Relq, Relvol]
+    metrics_list.append(list_res)
+    
+######################################################################
+
+########################################################################################
 ############ Updating the main directory
 met_df = pd.DataFrame(metrics_list, columns = ["Event name","Nash","RMSE","Relative Q","Relative Vol"])
+
+############### Get the optimized parameters after calibration ###############################
 optimized_parm = get_optimized_parameters(sqfiledir , calibrated_parameters)
 optimized_parm['Value'] = round(optimized_parm['Value'],3)
 print(met_df)
