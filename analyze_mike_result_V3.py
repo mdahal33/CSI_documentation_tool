@@ -681,9 +681,9 @@ if update_main_excel=="TRUE":
     my_opt_par = optimized_parm
     my_perf_metric = met_df
     
-    Nash_mean = my_perf_metric['Nash'].mean()
-    RelQ_mean = my_perf_metric['Relative Q'].mean()
-    RelVol_mean = my_perf_metric['Relative Vol'].mean()
+    Nash_mean = round(my_perf_metric['Nash'].mean(),2)
+    RelQ_mean = round(my_perf_metric['Relative Q'].mean(),2)
+    RelVol_mean = round(my_perf_metric['Relative Vol'].mean(),2)
     
     basin_name_colomn = 'A'
     header_name_row = 3
@@ -745,6 +745,7 @@ if update_main_excel=="TRUE":
     wb_st_2 = wb_obj['Event_detail']
     basin_name_evnt_sht = 'A'
     
+    
     for cell in wb_st_2[basin_name_evnt_sht]:
         if(cell.value == basin_name): #We need to check that the cell is not empty.
             #if 'Table' in cell.value: #Check if the value of the cell contains the text 'Table'
@@ -755,6 +756,12 @@ if update_main_excel=="TRUE":
     
     
     ####### Update Event dates ##################
+    
+    #### Rearrange event dataframe ##########
+    adf_event_data.columns = list(event_data.columns)
+    
+    event_data = pd.concat([event_data, adf_event_data]).reset_index(drop = True)
+    
     
     for eve in list(event_data['Event']):
         strt_dt = event_data[event_data['Event']==eve]['Start Date'].iloc[0]
