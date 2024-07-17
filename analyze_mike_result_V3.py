@@ -446,6 +446,7 @@ def main():
     ### Remove empty rows from the data
     
     flow_data_2 = flow_data[flow_data['I/I mgd'] != ' '].copy()
+    flow_data_2 = flow_data_2[flow_data_2['I/I mgd'] != ' #N/A'].copy()
     flow_data_2['I/I mgd'] = flow_data_2['I/I mgd'].astype(float)
     
     ### Diurnal
