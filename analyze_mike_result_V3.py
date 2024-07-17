@@ -770,7 +770,7 @@ def main():
         #### Rearrange event dataframe ##########
         adf_event_data.columns = list(event_data.columns)
         
-        event_data = pd.concat([event_data, adf_event_data]).reset_index(drop = True)
+        #event_data = pd.concat([event_data, adf_event_data]).reset_index(drop = True)
         
         
         for eve in list(event_data['Event']):
@@ -781,7 +781,19 @@ def main():
                 celll = wb_st_2.cell(row = basin_row_s2, column = event_col_strt)
                 celll.value = str(dt)
                 event_col_strt = event_col_strt + 1
-                
+
+    #### Updating the ADF colomns in the Event_detail sheet separately #############
+    #### Had to do it separately because current method dont really work if the number of storm events are not 10
+    
+        event_col_strt_2 = 22
+        for eve in list(adf_event_data['Event']):
+            strt_dt = adf_event_data[adf_event_data['Event']==eve]['Start Date'].iloc[0]
+            end_dt = adf_event_data[adf_event_data['Event']==eve]['End Date'].iloc[0]
+            
+            for dt in [strt_dt, end_dt]:
+                celll = wb_st_2.cell(row = basin_row_s2, column = event_col_strt_2)
+                celll.value = str(dt)
+                event_col_strt_2 = event_col_strt_2 + 1
         
         ##### Save the updated file ###################
         wb_obj.save(Main_excel_file)
