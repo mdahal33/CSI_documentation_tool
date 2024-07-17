@@ -133,7 +133,7 @@ def get_optimized_parameters(sqfile_dir, calibrated_parameters, c_name, RDII_nam
 
 ############ Compute performance metrics #######################
 
-def compute_metrics(flow_data_filt, qdf_filt, save_int, model_dir=None, event_name=None):
+def compute_metrics(flow_data_filt, qdf_filt, save_int, model_dir="dummy_path100", event_name="dummy_event100"):
 
     '''
         Provided the data frame for flow data and model result, this function will compute the performance metrics of the data.
@@ -142,8 +142,10 @@ def compute_metrics(flow_data_filt, qdf_filt, save_int, model_dir=None, event_na
         qdf_filt: model result that is extracted from Res1d file and filtered for a given event
         save_int: str; should the comparison graph between raw and interpolated data be saved ("TRUE" OR "FALSE")
             If "TRUE":
-        model_dir: provide directory where the interpolated graph will be saved
+        model_dir: provide directory where the interpolated graph will be saved; 
+                defaults to "dummy_path100". This is meant to be overridden when the save_int is TRUE.
         event_name: Name of the event that is being interpolated
+                defaults to "dummy_event100". This is meant to be overridden when the save_int is TRUE.
         
         #### This will also interpolate the model result if the model result time series dont align with flow_data time series.
         
@@ -530,7 +532,7 @@ def main():
         ### Extract the NASH#, Qpeak, Volume
         ############################### Calculating Metrices #################
     
-        met_list = compute_metrics(flow_data_filt, qdf_filt, save_interpolated_graph)
+        met_list = compute_metrics(flow_data_filt, qdf_filt, save_interpolated_graph, model_dir, event_name)
         
         ldf3 = met_list[0].reset_index()
         Nash = met_list[1]
