@@ -416,7 +416,7 @@ def main():
     rain_data['datetime'] = pd.to_datetime(rain_data['datetime'] )
     #rain_data[1] = pd.to_datetime(rain_data[1] )
     ### What is the rainfall hyetograph width 
-    rain_width = float(input_data['Input'].loc[16]) #hr
+    rain_width = int(input_data['Input'].loc[16]) #hr
     
     ##### Aggregate the rainfall
     rain_data_agg = rain_data.groupby(pd.Grouper(key = "datetime",freq = (str(rain_width)+"h")))['rain'].sum().reset_index()
