@@ -59,6 +59,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 #import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 #from plotnine import *
 import math
 import matplotlib.dates as mdates
@@ -318,6 +319,38 @@ def create_graph(model_date, model_y, flow_met_date, flow_met_y, diurn_date, diu
     
 
 ###################################################################################
+
+### Group events for composite figures ###
+
+def group_events(grp_size, event_data, col_name):
+    
+    '''
+    Creates group of event for composite figure
+    
+    grp_size = group of event for 1 figure
+    event_data = dataframe with event names.. 
+    col_name = colomn with event name 
+    
+    returns = list of event names grouped 
+    '''
+    len_eve = len(event_data)
+    fact = math.ceil(len_eve/grp_size)
+    quo = len_eve // grp_size
+    rem = len_eve % grp_size
+    a= 0
+    evelist_main = []
+    for i in range(fact):
+        evelist = []
+        if(i+1>quo):
+            grp_size = rem
+        for j in range(grp_size):
+            #a = a + j
+            evelist.append(event_data.loc[j+a,col_name])
+        a = j+a+1
+        evelist_main.append(evelist)
+        
+    return evelist_main
+
 ###############################################################################################
 ### Update value based on header name, basin row, and the value itself using openpyxl
 
@@ -465,6 +498,9 @@ def main():
     update_main_excel = input_data['Input'].loc[18] 
     modeler_name = input_data['Input'].loc[0] 
     main_excel_dir = input_data['Input'].loc[15] 
+    create_composite = input_data['Input'].loc[19]
+    group_size = int(input_data['Input'].loc[20])
+    get_runoff_component = input_data['Input'].loc[21]
     
     ### 
     metrics_list = list()
@@ -672,6 +708,115 @@ def main():
     print(optimized_parm)
     #met_df.to_csv(model_dir+"\\performance_metrics.txt", index=None)
     #optimized_parm.to_csv(model_dir+"\\optimized_parameters.txt", index = None)
+    
+    ########## Creating composite figures ############
+    ##################################################
+    
+    if create_composite=="TRUE":
+        print("\n")    
+        print("Creating composite figure of events. Group size: ", group_size)
+        
+        mydir = model_dir ## This is the directory where the saved images are
+
+        ########## COMPOSITE STORM EVENTS ###################################
+        ######################################################################
+
+        grp_sze = group_size
+
+        evelist = group_events(grp_sze, event_data,"Event")
+        comp_count = 1   ## This is for counting composite images
+        for l in evelist:
+            len_e = len(l)
+            if(len_e > 2):
+                if(len_e <5):
+                    fig, axs = plt.subplots(nrows = math.ceil(len_e/2), ncols = 2, figsize = (34, 20))
+                if((len_e >=5) & (len_e < 7)):
+                    fig, axs = plt.subplots(nrows = math.ceil(len_e/2), ncols = 2, figsize = (28, 25))
+                    if len_e == 5:
+                        axs[2,1].remove()
+            
+            if(len_e == 2):
+                fig, axs = plt.subplots(nrows = 2, figsize = (34, 20))
+
+            if(len_e == 1):
+                print("Failed to attach one event to the composite: ", l[0])
+                print("This could be because there was just one event left to group.")
+                print("Try changing group size. Possible sizes: 2 to 6")
+                break
+            
+            for i in range(len_e):
+
+                nm = l[i]+"_"+basin_name+".png"
+                
+                fullnm = mydir+"\\"+nm
+                
+                img = mpimg.imread(fullnm)
+                if(len_e >2):
+                    ax = axs[i // 2, i % 2]
+                if(len_e == 2):
+                    ax = axs[i]
+                    #ax = axs[i]
+                ax.imshow(img)
+                ax.axis('off')
+
+            if len_e == 3:
+                axs[1,1].remove()
+
+            plt.tight_layout()
+            
+            plt.savefig(mydir+"\\composite_img_"+basin_name+"_"+str(comp_count)+".png")
+            comp_count = comp_count+1
+            
+        ################################################
+        ##################################################
+        
+        ########### COMPOSITE ADF EVENTS ###############################
+        ####################################################################
+
+        grp_sze = 3
+        evelist2 = group_events(3, adf_event_data, "ADF_event")
+
+        comp_count = 1   ## This is for counting composite images
+        for l in evelist2:
+            len_e = len(l)
+            if(len_e > 2):
+                fig, axs = plt.subplots(nrows = 1, ncols = len_e, figsize = (55, 18))
+            
+            if(len_e == 2):
+                fig, axs = plt.subplots(nrows = 2, figsize = (34, 20))
+            
+            if (len_e == 1):
+                print("Failed to attach one ADF event to the composite: ", l[0])
+                print("This could be because there was not enough event to group it with.")
+                break
+            
+            
+            for i in range(len_e):
+
+                nm = l[i]+"_"+basin_name+".png"
+                
+                fullnm = mydir+"\\"+nm
+                
+                img = mpimg.imread(fullnm)
+
+                ax = axs[i]
+                #ax = axs[i]
+                ax.imshow(img)
+                ax.axis('off')
+            
+            plt.tight_layout()
+            
+            plt.savefig(mydir+"\\ADF__composite_img_"+basin_name+"_"+str(comp_count)+".png")
+            comp_count = comp_count+1      
+                
+        ######################################################################################
+        #########################################################################################   
+        
+        
+    
+    
+    print("Composite figures successfully created!")
+    
     
     ############ Updating excel file ##################
     ####################################################
